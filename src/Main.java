@@ -76,7 +76,7 @@ public class Main {
 //			System.out.println(rowNumsOfValidTransferCells[i]);
 //		}
 		
-		
+		transferCells(analysisSheet, exportedSheet, rowNumsOfValidTransferCells, rowEndAnalysis);
 		
 		
 		
@@ -101,16 +101,36 @@ public class Main {
 
 	}
 	
-	public static void transferCells(Sheet analysis, Sheet transfer, ArrayList<Integer> rowsToTransfer) {
+	public static void transferCells(Sheet analysis, Sheet exported, ArrayList<Integer> rowsToTransfer, int rowEndAnalysis) {
 		int exportDateCol = 1;
 		int exportTransactionTypeCol = 2;
 		int exportCheckNumCol = 3;
 		int exportNameCol = 4;
 		int exportMemoCol = 5;
 		int exportAmountCol = 8;
+		rowEndAnalysis += -1;
+		ArrayList<String> dateCellsFromExport = new ArrayList<String>();
+		ArrayList<String> transTypeCellsFromExport = new ArrayList<String>();
+		ArrayList<String> checkNumCellsFromExport = new ArrayList<String>();
+		ArrayList<String> nameCellsFromExport = new ArrayList<String>();
+		ArrayList<String> memoCellsFromExport = new ArrayList<String>();
+		ArrayList<String> amountCellsFromExport = new ArrayList<String>();
+		
+		
 		for (int i=0; i < rowsToTransfer.size(); i++ ) {
-			Cell dateCellsFromExport = transfer.getRow(rowsToTransfer.get(i)).getCell(exportDateCol);
+			dateCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportDateCol).toString());  
+			transTypeCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportTransactionTypeCol).toString());
+			checkNumCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportCheckNumCol).toString());
+			nameCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportNameCol).toString());
+			memoCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportMemoCol).toString());
+			amountCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportAmountCol).toString());
 			
+			exported.getRow(rowEndAnalysis).getCell(exportDateCol).setCellValue(dateCellsFromExport.get(i));
+			exported.getRow(rowEndAnalysis).getCell(exportTransactionTypeCol).setCellValue(transTypeCellsFromExport.get(i));
+			exported.getRow(rowEndAnalysis).getCell(exportCheckNumCol).setCellValue(checkNumCellsFromExport.get(i));
+			exported.getRow(rowEndAnalysis).getCell(exportNameCol).setCellValue(nameCellsFromExport.get(i));
+			exported.getRow(rowEndAnalysis).getCell(exportMemoCol).setCellValue(memoCellsFromExport.get(i));
+			exported.getRow(rowEndAnalysis).getCell(exportAmountCol).setCellValue(amountCellsFromExport.get(i));
 		}
 		
 		
