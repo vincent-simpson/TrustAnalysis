@@ -2,28 +2,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.util.CellAddress;
+
 
 
 public class Main {
-	
+
 	private static ArrayList<Integer> rowNumsOfValidTransferCells = new ArrayList<>();
 
 	public static void main(String[] args) throws InvalidFormatException, IOException {
-
 
 		File analysisSpreadsheet = new File("analysisSpreadsheet.xlsx");
 		File exportedSpreadsheet = new File("exportedexcelquickbooks.xlsx");
@@ -38,7 +33,7 @@ public class Main {
 
 		int rowStartAnalysis = 7;
 		int rowStartExported = 7;
-		int rowEndAnalysis = 8;
+		int rowEndAnalysis = 7;
 		int rowEndExported = 0;
 
 		for (int rowNum = rowStartAnalysis; rowNum <= analysisSheet.getLastRowNum(); rowNum++) {
@@ -64,29 +59,30 @@ public class Main {
 		} rowEndExported += 7;
 
 
-
-		int exportedNumOfRows = numOfRowsToInsertFromExport(analysisSheet, exportedSheet, rowEndAnalysis, rowEndExported);
+		
+		int exportedNumOfRows = getNumberOfRowsToTransfer(analysisSheet, exportedSheet, rowEndAnalysis, rowEndExported);
 
 		analysisSheet.shiftRows(rowEndAnalysis, analysisSheet.getLastRowNum(), exportedNumOfRows);
 		for(int i=0; i < exportedNumOfRows + 2; i++) {
 			analysisSheet.createRow(329 + i);
 		}
-		
-//		for(int i=0; i<rowNumsOfValidTransferCells.length; i++) {
-//			System.out.println(rowNumsOfValidTransferCells[i]);
-//		}
-		
+
+		//		for(int i=0; i<rowNumsOfValidTransferCells.length; i++) {
+		//			System.out.println(rowNumsOfValidTransferCells[i]);
+		//		}
+
 		transferCells(analysisSheet, exportedSheet, rowNumsOfValidTransferCells, rowEndAnalysis);
-		
-		
-		
+
+
+
 		inputAnalysis.close();
 		inputExported.close();
 
 		analysisWB.write(new FileOutputStream(analysisSpreadsheet));
-		analysisWB.close();
 		exportedWB.write(new FileOutputStream(exportedSpreadsheet));
 		exportedWB.close();
+		analysisWB.close();
+
 
 
 		System.out.println(rowEndExported + " :: exported rows");
@@ -101,6 +97,26 @@ public class Main {
 
 	}
 	
+	/**
+	 * 
+	 * @param analysisSheet
+	 * @param exportedSheet
+	 * @param rowEndAnalysis
+	 * @param rowEndExported
+	 * @return
+	 */
+	public static int getNumberOfRowsToTransfer(Sheet analysisSheet, Sheet exportedSheet, int rowEndAnalysis, int rowEndExported) {
+		int numOfRowsToTransfer = numOfRowsToInsertFromExport(analysisSheet, exportedSheet, rowEndAnalysis, rowEndExported);
+		return numOfRowsToTransfer;
+	}
+
+	/**
+	 * 
+	 * @param analysis
+	 * @param exported
+	 * @param rowsToTransfer
+	 * @param rowEndAnalysis
+	 */
 	public static void transferCells(Sheet analysis, Sheet exported, ArrayList<Integer> rowsToTransfer, int rowEndAnalysis) {
 		int exportDateCol = 1;
 		int exportTransactionTypeCol = 2;
@@ -108,32 +124,59 @@ public class Main {
 		int exportNameCol = 4;
 		int exportMemoCol = 5;
 		int exportAmountCol = 8;
-		rowEndAnalysis += -1;
+		
 		ArrayList<String> dateCellsFromExport = new ArrayList<String>();
 		ArrayList<String> transTypeCellsFromExport = new ArrayList<String>();
-		ArrayList<String> checkNumCellsFromExport = new ArrayList<String>();
+		ArrayList<Integer> checkNumCellsFromExport = new ArrayList<Integer>();
 		ArrayList<String> nameCellsFromExport = new ArrayList<String>();
 		ArrayList<String> memoCellsFromExport = new ArrayList<String>();
-		ArrayList<String> amountCellsFromExport = new ArrayList<String>();
-		
-		
+		ArrayList<Double> amountCellsFromExport = new ArrayList<Double>();
+
+
 		for (int i=0; i < rowsToTransfer.size(); i++ ) {
-			dateCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportDateCol).toString());  
-			transTypeCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportTransactionTypeCol).toString());
-			checkNumCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportCheckNumCol).toString());
+			dateCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportDateCol).toString());			
+			transTypeCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportTransactionTypeCol).toString());					
+			checkNumCellsFromExport.add((int) exported.getRow(rowsToTransfer.get(i)).getCell(exportCheckNumCol).getNumericCellValue());
 			nameCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportNameCol).toString());
 			memoCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportMemoCol).toString());
-			amountCellsFromExport.add(exported.getRow(rowsToTransfer.get(i)).getCell(exportAmountCol).toString());
 			
-			exported.getRow(rowEndAnalysis).getCell(exportDateCol).setCellValue(dateCellsFromExport.get(i));
-			exported.getRow(rowEndAnalysis).getCell(exportTransactionTypeCol).setCellValue(transTypeCellsFromExport.get(i));
-			exported.getRow(rowEndAnalysis).getCell(exportCheckNumCol).setCellValue(checkNumCellsFromExport.get(i));
-			exported.getRow(rowEndAnalysis).getCell(exportNameCol).setCellValue(nameCellsFromExport.get(i));
-			exported.getRow(rowEndAnalysis).getCell(exportMemoCol).setCellValue(memoCellsFromExport.get(i));
-			exported.getRow(rowEndAnalysis).getCell(exportAmountCol).setCellValue(amountCellsFromExport.get(i));
+			Double z = exported.getRow(rowsToTransfer.get(i)).getCell(exportAmountCol).getNumericCellValue();
+			String x = String.format("%.2f", z);
+			Double dubtwo = Double.parseDouble(x);
+
+			amountCellsFromExport.add(dubtwo);
+
+			Cell a = analysis.createRow(rowEndAnalysis).createCell(exportDateCol-1);
+			a.setCellType(CellType.STRING);
+			a.setCellValue(dateCellsFromExport.get(i));
+
+			Cell b = analysis.getRow(rowEndAnalysis).createCell(exportTransactionTypeCol-1);
+			b.setCellType(CellType.STRING);
+			b.setCellValue(transTypeCellsFromExport.get(i));
+
+			Cell c = analysis.getRow(rowEndAnalysis).createCell(exportCheckNumCol-1);
+			c.setCellType(CellType.STRING);
+			if(checkNumCellsFromExport.get(i) != 0) {
+				c.setCellValue(checkNumCellsFromExport.get(i));
+			}
+
+			Cell d = analysis.getRow(rowEndAnalysis).createCell(exportNameCol-1);
+			d.setCellType(CellType.STRING);
+			d.setCellValue(nameCellsFromExport.get(i));
+
+			Cell e = analysis.getRow(rowEndAnalysis).createCell(exportMemoCol-1);
+			e.setCellType(CellType.STRING);
+			e.setCellValue(memoCellsFromExport.get(i));
+
+			Cell f = analysis.getRow(rowEndAnalysis).createCell(exportAmountCol-1);
+			f.setCellType(CellType.NUMERIC);
+			f.setCellValue(amountCellsFromExport.get(i));
+
+			rowEndAnalysis++;
+
 		}
-		
-		
+
+
 	}
 
 	/**
@@ -157,8 +200,8 @@ public class Main {
 
 
 	}
-		
-	
+
+
 	/**
 	 * 
 	 * @param analysis
@@ -171,18 +214,18 @@ public class Main {
 		//Need to figure out how many rows to insert into the analysis from the exported sheet
 		int rowCount =0;
 		for(int rowNumExport=7; rowNumExport < rowEndExported; rowNumExport++) {
-			for(int rowNumAnalysis= rowEndAnalysis-2; rowNumAnalysis > 300; rowNumAnalysis--) {
+			for(int rowNumAnalysis= rowEndAnalysis-1; rowNumAnalysis > 300; rowNumAnalysis--) {
 				try {
 					Cell currentExportCell = export.getRow(rowNumExport).getCell(9);
 					Cell currentAnalysisCell = analysis.getRow(rowNumAnalysis).getCell(8);
-													
+
 					String exportedValue = String.format("%.2f", currentExportCell.getNumericCellValue()); 
 					String analysisValue = String.format("%.2f", currentAnalysisCell.getNumericCellValue());
 
 					if(!(exportedValue.equals(analysisValue))) {
-						System.out.println("Export row num: " + rowNumExport);
-						System.out.println("Analysis row num: " + rowNumAnalysis);
-						
+						System.out.println("Export row num: " + rowNumExport + " Value: " + exportedValue);
+						System.out.println("Analysis row num: " + rowNumAnalysis + " Value: " + analysisValue);
+
 						rowNumsOfValidTransferCells.add(rowNumExport);
 
 						rowCount++;
